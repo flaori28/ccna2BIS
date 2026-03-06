@@ -1,4 +1,4 @@
-﻿const quizData = [
+﻿const allQuestions = [
     {
         "id":  1,
         "original_id":  1,

@@ -1,7 +1,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Variable to hold all questions grouped by series
-    let quizData = {};
+    let quizChunks = {};
     let totalSeries = 0;
     let currentSeriesId = 1;
 
@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof allQuestions !== 'undefined') {
          processQuestions(allQuestions);
          initMenu();
+    } else if (typeof quizData !== 'undefined' && Array.isArray(quizData) && quizData.length > 0) {
+        // Fallback for older variable name
+        processQuestions(quizData);
+        initMenu();
     } else {
         fetch('questions.json')
             .then(response => {
@@ -42,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let i = 0; i < allQuestions.length; i += chunkSize) {
             const chunk = allQuestions.slice(i, i + chunkSize);
-            quizData[seriesIndex] = chunk;
+            quizChunks[seriesIndex] = chunk;
             seriesIndex++;
         }
         totalSeries = seriesIndex - 1;
