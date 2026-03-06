@@ -110,20 +110,20 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderQuestions(seriesId) {
         const container = document.getElementById('questions-container');
         if (!container) return;
-        
+
         container.innerHTML = '';
-        
-        const questions = quizData[seriesId];
-        
+
+        const questions = quizChunks[seriesId];
+
         if (!questions) {
             container.innerHTML = '<p>Série non disponible.</p>';
             return;
         }
-        
+
         questions.forEach((q, index) => {
-            const qNum = index + 1;
+            const qNum = q.id;
             const uniqueName = `q-${seriesId}-${index}`;
-            
+
             const card = document.createElement('div');
             card.className = 'question-card';
             // Store correct index as string or JSON array
