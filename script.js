@@ -1,60 +1,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Login Logic ---
-    // Codes d'accès autorisés
-    const accessCodes = [
-        "admin", "etudiant1", "etudiant2", "flavio", "cisco2026", "cricri"
-    ];
-
-    const overlay = document.getElementById('login-overlay');
-    const input = document.getElementById('access-code');
-    const errorMsg = document.getElementById('error-msg');
-    const btn = document.querySelector('.login-box button');
-
-    // Check if valid user session exists
-    const currentUser = localStorage.getItem('current_user');
+    // Default user for simplified access
+    const currentUser = "etudiant";
+    if (!localStorage.getItem('current_user')) {
+        localStorage.setItem('current_user', currentUser);
+    }
     
-    // Only hide overlay if user is logged in
-    if (currentUser && accessCodes.includes(currentUser)) {
-        if(overlay) overlay.classList.add('hidden');
-        showUserInterface(currentUser);
-    }
-
-    window.checkAccess = function() {
-        const val = input.value.trim();
-        if (accessCodes.includes(val)) {
-            localStorage.setItem('current_user', val);
-            if(overlay) overlay.classList.add('hidden');
-            showUserInterface(val);
-        } else {
-            if(errorMsg) errorMsg.style.display = 'block';
-            if(input) {
-                input.style.borderColor = '#dc3545';
-                input.value = '';
-                input.focus();
-            }
-        }
-    };
-
-    window.logout = function() {
-        localStorage.removeItem('current_user');
-        location.reload();
-    };
-
-    function showUserInterface(username) {
-        const welcomeDiv = document.getElementById('user-welcome');
-        const skillsDiv = document.getElementById('skills-container');
-        const userSpan = document.getElementById('current-user');
-        
-        if (welcomeDiv) welcomeDiv.classList.remove('hidden');
-        if (skillsDiv) skillsDiv.classList.remove('hidden');
-        if (userSpan) userSpan.textContent = username;
-        
-        loadHistory(username);
-    }
+    // Load history for default user
+    loadHistory(currentUser);
 
     function loadHistory(username) {
         const grid = document.getElementById('history-grid');
+        const statsContainer = document.getElementById('stats-dashboard-container');
         if (!grid) return;
         
         const key = `history_${username}`;
@@ -64,6 +21,53 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             history = raw ? JSON.parse(raw) : [];
         } catch(e) { history = []; }
+
+        // Reset
+        grid.innerHTML = '';
+        if (statsContainer) statsContainer.innerHTML = '';
+
+        // Calculate Stats
+        let totalScore = 0;
+        let totalMax = 0;
+        const uniqueSeries = new Set();
+        
+        history.forEach(h => {
+            totalScore += h.score;
+            totalMax += h.total;
+            uniqueSeries.add(h.seriesId);
+        });
+        
+        // Avoid division by zero
+        const avgScore = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+        // Check if totalSeries is loaded (global var)
+        const currentTotalSeries = (typeof totalSeries !== 'undefined' && totalSeries > 0) ? totalSeries : 0;
+        const progressPercent = currentTotalSeries > 0 ? Math.round((uniqueSeries.size / currentTotalSeries) * 100) : 0;
+        
+        // Inject Stats Dashboard (Always show stats, even if empty)
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <div class="stats-dashboard">
+                    <div class="stat-card">
+                        <span class="stat-value">${history.length}</span>
+                        <span class="stat-label">Quiz Terminés</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">${avgScore}%</span>
+                        <span class="stat-label">Moyenne Globale</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value">${uniqueSeries.size} / ${currentTotalSeries || '?'}</span>
+                        <span class="stat-label">Séries Complétées</span>
+                    </div>
+                </div>
+                <div class="progress-section">
+                    <h4>Progression Globale (${progressPercent}%)</h4>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width: ${progressPercent < 5 ? 5 : progressPercent}%">${progressPercent}%</div>
+                    </div>
+                </div>
+            `;
+        }
         
         if (history.length === 0) {
             grid.innerHTML = '<p style="grid-column: 1/-1; color:#666; font-style:italic;">Aucun résultat enregistré pour cet utilisateur.</p>';
@@ -75,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let html = '';
         history.forEach(item => {
-            const ratio = item.score / item.total;
+            const ratio = item.total > 0 ? item.score / item.total : 0;
             let scoreClass = 'score-bad';
             if (ratio === 1) scoreClass = 'score-perfect';
             else if (ratio >= 0.8) scoreClass = 'score-good';
@@ -115,22 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
         loadHistory(username);
     }
 
-    // Attach event listener to button if it exists
-    if(btn) {
-        btn.onclick = window.checkAccess;
-    }
-
-    // Allow Enter key
-    window.handleLogin = function(e) {
-        if (e.key === 'Enter') {
-            window.checkAccess();
-        }
-    };
-    
-    // Focus input on load
-    if (input && (!sessionStorage.getItem('is_authenticated'))) {
-        setTimeout(() => input.focus(), 500);
-    }
     // --- End Login Logic ---
 
     // Variable to hold all questions grouped by series
@@ -157,6 +145,11 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(data => {
                 processQuestions(data);
                 initMenu();
+                // Refresh history once questions are known
+                const user = localStorage.getItem('current_user');
+                if (user && typeof loadHistory === 'function') {
+                    loadHistory(user);
+                }
             })
             .catch(err => {
                 console.error('Error loading questions:', err);
@@ -276,7 +269,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Options handling
             let optionsHtml = '';
-            if (q.options && q.options.length > 0) {
+            
+            // Branch for Drag & Drop Match Questions
+            if (q.match_pairs && q.match_pairs.length > 0) {
+                // Generate Left Column (Definition/Target)
+                let leftHtml = '';
+                q.match_pairs.forEach((pair, idx) => {
+                    // Escape quotes just in case
+                    const safeTerm = pair.term.replace(/"/g, '&quot;');
+                    leftHtml += `
+                        <div class="match-row" data-correct="${safeTerm}">
+                            <div class="match-static">${pair.definition}</div>
+                            <div class="match-dropzone" data-target-id="${idx}"></div>
+                        </div>
+                    `;
+                });
+
+                // Generate Right Column (Draggable Terms) - Shuffled
+                let terms = q.match_pairs.map(p => p.term);
+                // Shuffle logic
+                terms.sort(() => Math.random() - 0.5);
+                
+                let rightHtml = '';
+                terms.forEach((term, idx) => {
+                     const safeTerm = term.replace(/"/g, '&quot;');
+                     rightHtml += `<div class="draggable-item" draggable="true" id="drag-${q.id}-${idx}" data-val="${safeTerm}">${term}</div>`;
+                });
+
+                optionsHtml = `
+                    <div class="match-container" id="match-${q.id}">
+                        <div class="match-board">${leftHtml}</div>
+                        <div class="match-bank" id="bank-${q.id}">
+                            <small style="display:block;margin-bottom:5px;color:#666;">Faites glisser les éléments ici :</small>
+                            ${rightHtml}
+                        </div>
+                    </div>
+                `;
+            
+            } else if (q.options && q.options.length > 0) {
                 q.options.forEach((optText, optIdx) => {
                     optionsHtml += `
                         <label class="option" data-idx="${optIdx}" style="display:block; margin-bottom:8px; padding:10px; border:1px solid #eee; border-radius:4px; cursor:pointer;">
@@ -359,6 +389,42 @@ document.addEventListener('DOMContentLoaded', () => {
             const expl = card.querySelector('.explanation');
             if (expl) expl.classList.add('hidden');
             
+            // Check for Match Question
+            const matchContainer = card.querySelector('.match-container');
+            if (matchContainer) {
+                 let allCorrect = true;
+                 const rows = matchContainer.querySelectorAll('.match-row');
+                 let filledCount = 0;
+
+                 rows.forEach(row => {
+                     const correctTerm = row.dataset.correct;
+                     const zone = row.querySelector('.match-dropzone');
+                     const item = zone.querySelector('.draggable-item');
+                     
+                     // Reset styles
+                     zone.style.borderColor = '#ced4da';
+                     if (item) {
+                         item.classList.remove('correct', 'wrong');
+                         filledCount++;
+                         
+                         const val = item.dataset.val; // dataset auto-decodes
+                         if (val === correctTerm) {
+                             item.classList.add('correct');
+                         } else {
+                             item.classList.add('wrong');
+                             allCorrect = false;
+                         }
+                     } else {
+                         allCorrect = false;
+                         zone.style.borderColor = '#dc3545'; // Highlight empty
+                     }
+                 });
+                 
+                 if (filledCount > 0 && allCorrect) score++;
+                 if (expl) expl.classList.remove('hidden');
+                 return; // Skip standard option checks
+            }
+
             // 2. Check each option
             options.forEach(opt => {
                 const inp = opt.querySelector('input');
@@ -429,4 +495,69 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ratio >= 0.5) return { text: "Pas mal, mais des révisions sont nécessaires.", color: "#ff9800" }; // orange
         return { text: "Attention, il faut revoir le cours.", color: "#f44336" }; // red
     }
+
+    // --- Drag & Drop Handlers for Match Questions ---
+    document.addEventListener('dragstart', (e) => {
+        if (e.target.classList.contains('draggable-item')) {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            e.target.style.opacity = '0.5';
+        }
+    });
+
+    document.addEventListener('dragend', (e) => {
+        if (e.target.classList.contains('draggable-item')) {
+            e.target.style.opacity = '1';
+        }
+    });
+
+    document.addEventListener('dragover', (e) => {
+        if (e.target.closest('.match-dropzone') || e.target.closest('.match-bank')) {
+            e.preventDefault();
+            const zone = e.target.closest('.match-dropzone');
+            if (zone) zone.classList.add('drag-over');
+        }
+    });
+
+    document.addEventListener('dragleave', (e) => {
+        const zone = e.target.closest('.match-dropzone');
+        if (zone) zone.classList.remove('drag-over');
+    });
+
+    document.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const dropzone = e.target.closest('.match-dropzone') || e.target.closest('.match-bank');
+        if (!dropzone) return;
+
+        if (dropzone.classList.contains('match-dropzone')) {
+            dropzone.classList.remove('drag-over');
+        }
+
+        const id = e.dataTransfer.getData('text/plain');
+        const draggable = document.getElementById(id);
+        if (!draggable) return;
+
+        const oldParent = draggable.parentElement;
+
+        if (dropzone.classList.contains('match-dropzone')) {
+             // If target has item, move to bank
+             const existing = dropzone.querySelector('.draggable-item');
+             if (existing) {
+                 const bank = dropzone.closest('.match-container').querySelector('.match-bank');
+                 bank.appendChild(existing);
+             }
+             dropzone.appendChild(draggable);
+             dropzone.classList.add('filled');
+        } else {
+             // Dropping back to bank
+             dropzone.appendChild(draggable);
+        }
+
+        // Cleanup old parent
+        if (oldParent && oldParent.classList.contains('match-dropzone')) {
+            // Double check if empty slightly later or trust DOM
+            if (oldParent.querySelectorAll('.draggable-item').length === 0) {
+                oldParent.classList.remove('filled');
+            }
+        }
+    });
 });

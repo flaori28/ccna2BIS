@@ -18,15 +18,17 @@
     {
         "id":  2,
         "original_id":  2,
-        "question":  "Faites correspondre le numéro d’étape à la séquence des étapes qui se produisent pendant le processus de basculement HSRP. (Les propositions ne doivent pas être toutes utilisées.)",
-        "options":  [
-
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2021/12/2024-10-16_102955.jpg"
+        "type": "match",
+        "question":  "Faites correspondre le numéro d’étape à la séquence des étapes qui se produisent pendant le processus de basculement HSRP.",
+        "match_pairs": [
+            { "term": "Étape 1", "definition": "Le routeur de transfert échoue." },
+            { "term": "Étape 2", "definition": "Le routeur en veille cesse de voir les messages Hello du routeur de transfert." },
+            { "term": "Étape 3", "definition": "Le routeur de secours assume le rôle du routeur de transfert en utilisant à la fois les adresses IP et MAC du routeur virtuel." }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "Lorsque le routeur actif HSRP tombe en panne, le routeur de secours cesse de recevoir les paquets Hello. Il passe alors à l'état actif et prend en charge le trafic destiné à l'adresse virtuelle.",
+        "image":  null
     },
     {
         "id":  3,
@@ -187,15 +189,18 @@
     {
         "id":  12,
         "original_id":  12,
-        "question":  "Associez la description au type de VLAN correct. (Les options ne sont pas toutes utilisées.)",
-        "options":  [
-
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "Explication : Un VLAN de données est configuré pour transporter le trafic généré par l’utilisateur. Un VLAN par défaut est le VLAN auquel appartiennent tous les ports de commutateur après le démarrage initial d’un commutateur chargeant la configuration par défaut. Un VLAN natif est affecté à un port de jonction 802.1Q et le trafic non balisé y est placé. Un VLAN de gestion est tout VLAN configuré pour accéder aux capacités de gestion d’un commutateur. Une adresse IP et un masque de sous-réseau lui sont attribués, ce qui permet de gérer le commutateur via HTTP, Telnet, SSH ou SNMP.",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2021/12/2021-12-03_222545.jpg"
+        "type": "match",
+        "question":  "Associez la description au type de VLAN correct.",
+        "match_pairs": [
+             { "term": "VLAN de données", "definition": "Transporte le trafic généré par l’utilisateur." },
+             { "term": "VLAN par défaut", "definition": "Tous les ports de commutateur y appartiennent après le démarrage initial." },
+             { "term": "VLAN natif", "definition": "Transporte le trafic non balisé sur un port de jonction 802.1Q." },
+             { "term": "VLAN de gestion", "definition": "Configuré pour accéder aux capacités de gestion d’un commutateur (HTTP/SSH)." }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "Explication : Un VLAN de données est configuré pour transporter le trafic généré par l’utilisateur. Un VLAN par défaut est le VLAN auquel appartiennent tous les ports de commutateur après le démarrage initial d’un commutateur chargeant la configuration par défaut. Un VLAN natif est affecté à un port de jonction 802.1Q et le trafic non balisé y est placé. Un VLAN de gestion est tout VLAN configuré pour accéder aux capacités de gestion d’un commutateur.",
+        "image":  null
     },
     {
         "id":  13,
@@ -216,15 +221,18 @@
     {
         "id":  14,
         "original_id":  14,
-        "question":  "Associez l’état de la liaison au statut d’interface et de protocole. (Les options ne sont pas toutes utilisées.)",
-        "options":  [
-
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2021/12/2024-10-15_201613.jpg"
+        "type": "match",
+        "question":  "Associez l’état de la liaison au statut d’interface et de protocole.",
+        "match_pairs": [
+             { "term": "Désactivée administrativement", "definition": "Interface: down / Protocol: down (Désactivée)" },
+             { "term": "Couche 1 inactive", "definition": "Interface: down / Protocol: down (Problème câble/physique)" },
+             { "term": "Couche 2 inactive", "definition": "Interface: up / Protocol: down (Problème encapsulation/clock rate)" },
+             { "term": "Opérationnelle", "definition": "Interface: up / Protocol: up" }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "1. Admin Down: Interface shutdown. 2. Layer 1 Issue: Câble débranché/mauvais type. 3. Layer 2 Issue: Mismatched encapsulation/clock rate/keepalives. 4. Operational: Tout fonctionne.",
+        "image":  null
     },
     {
         "id":  15,
@@ -379,15 +387,18 @@
     {
         "id":  24,
         "original_id":  24,
-        "question":  "Associez les types de message DHCP à l’ordre du processus DHCPv4. (Les options ne doivent pas être toutes utilisées.)",
-        "options":  [
-
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2021/12/2024-10-15_161502.jpg"
+        "type": "match",
+        "question":  "Associez les types de message DHCP à l’ordre du processus DHCPv4.",
+        "match_pairs": [
+             { "term": "Étape 1", "definition": "DHCPDISCOVER (Diffusion client)" },
+             { "term": "Étape 2", "definition": "DHCPOFFER (Unicast serveur)" },
+             { "term": "Étape 3", "definition": "DHCPREQUEST (Diffusion client)" },
+             { "term": "Étape 4", "definition": "DHCPACK (Unicast serveur)" }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "Le processus suit DORA : Discover -> Offer -> Request -> Acknowledge.",
+        "image":  null
     },
     {
         "id":  25,
@@ -2256,15 +2267,18 @@
     {
         "id":  138,
         "original_id":  93,
-        "question":  "Faites correspondre le but avec son type de message DHCP. (Toutes les options ne sont pas utilisées.)",
-        "options":  [
-
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2022/06/2020-01-20_232028.jpg"
+        "type": "match",
+        "question":  "Faites correspondre le but avec son type de message DHCP.",
+        "match_pairs": [
+             { "term": "DHCPDISCOVER", "definition": "Trouver un serveur DHCP disponible." },
+             { "term": "DHCPOFFER", "definition": "Le serveur propose une adresse IP au client." },
+             { "term": "DHCPREQUEST", "definition": "Le client accepte l'offre et demande l'adresse." },
+             { "term": "DHCPACK", "definition": "Le serveur confirme le bail de l'adresse IP." }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "Le processus DHCP comprend 4 étapes : Discover (Client cherche Serveur), Offer (Serveur propose IP), Request (Client demande IP), Acknowledge (Serveur valide).",
+        "image":  null
     },
     {
         "id":  139,
@@ -2303,18 +2317,18 @@
     {
         "id":  141,
         "original_id":  97,
-        "question":  "Faites correspondre chaque type de message DHCP avec sa description. (Toutes les options ne sont pas utilisées.)",
-        "options":  [
-                        "un client initiant un message pour trouver un serveur DHCP – DHCPDISCOVER",
-                        "un serveur DHCP répondant à la requête initiale d’un client – DHCPOFFER",
-                        "le client acceptant l’adresse IP fournie par le serveur DHCP – DHCPREQUEST",
-                        "le serveur DHCP confirmant que le bail a été accepté – DHCPACK"
-                    ],
-        "correct":  [
-
-                    ],
-        "explanation":  "Explication : Placez les options dans l’ordre suivant : un client initiant un message pour trouver un serveur DHCP – DHCPDISCOVER un serveur DHCP répondant à la requête initiale d’un client – DHCPOFFER le client acceptant l’adresse IP fournie par le serveur DHCP – DHCPREQUEST le serveur DHCP confirmant que le bail a été accepté – DHCPACK",
-        "image":  "https://ccnareponses.com/wp-content/uploads/2021/12/2020-01-20_225135-1.jpg"
+        "type": "match",
+        "question":  "Faites correspondre chaque type de message DHCP avec sa description.",
+        "match_pairs": [
+             { "term": "DHCPDISCOVER", "definition": "Un client initie un message pour trouver un serveur DHCP." },
+             { "term": "DHCPOFFER", "definition": "Un serveur DHCP répond à la requête initiale d’un client." },
+             { "term": "DHCPREQUEST", "definition": "Le client accepte l’adresse IP fournie par le serveur DHCP." },
+             { "term": "DHCPACK", "definition": "Le serveur DHCP confirme que le bail a été accepté." }
+        ],
+        "options": [],
+        "correct": [],
+        "explanation":  "1. DHCPDISCOVER (Client cherche). 2. DHCPOFFER (Serveur offre). 3. DHCPREQUEST (Client accepte/demande). 4. DHCPACK (Serveur valide).",
+        "image":  null
     },
     {
         "id":  142,
