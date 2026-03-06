@@ -2,8 +2,12 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Default user for simplified access
     const currentUser = "etudiant";
-    if (!localStorage.getItem('current_user')) {
-        localStorage.setItem('current_user', currentUser);
+    try {
+        if (!localStorage.getItem('current_user')) {
+             localStorage.setItem('current_user', currentUser);
+        }
+    } catch (e) {
+        console.warn("Storage access denied or error:", e);
     }
     
     // Load history for default user
@@ -15,12 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!grid) return;
         
         const key = `history_${username}`;
-        const raw = localStorage.getItem(key);
         let history = [];
         
         try {
+            const raw = localStorage.getItem(key);
             history = raw ? JSON.parse(raw) : [];
         } catch(e) { history = []; }
+
 
         // Reset
         grid.innerHTML = '';
@@ -103,18 +108,22 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function saveResult(username, seriesId, score, total) {
         const key = `history_${username}`;
-        const raw = localStorage.getItem(key);
-        let history = [];
-        try { history = raw ? JSON.parse(raw) : []; } catch(e) {}
-        
-        history.push({
-            seriesId: seriesId,
-            score: score,
-            total: total,
-            date: new Date().toISOString()
-        });
-        
-        localStorage.setItem(key, JSON.stringify(history));
+        try {
+            const raw = localStorage.getItem(key);
+            let history = [];
+            try { history = raw ? JSON.parse(raw) : []; } catch(e) {}
+            
+            history.push({
+                seriesId: seriesId,
+                score: score,
+                total: total,
+                date: new Date().toISOString()
+            });
+            
+            localStorage.setItem(key, JSON.stringify(history));
+        } catch (e) {
+            console.warn("Could not save result:", e);
+        }
         // Refresh display
         loadHistory(username);
     }
@@ -533,6 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const id = e.dataTransfer.getData('text/plain');
+        if (!id) return; // robustness check
         const draggable = document.getElementById(id);
         if (!draggable) return;
 
@@ -543,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
              const existing = dropzone.querySelector('.draggable-item');
              if (existing) {
                  const bank = dropzone.closest('.match-container').querySelector('.match-bank');
-                 bank.appendChild(existing);
+                 if (bank) bank.appendChild(existing);
              }
              dropzone.appendChild(draggable);
              dropzone.classList.add('filled');
