@@ -22,12 +22,23 @@ const App = {
 
     loadData: function() {
         if (typeof allQuestions !== 'undefined' && Array.isArray(allQuestions)) {
-            this.state.questions = allQuestions;
+            // SHUFFLE QUESTIONS GLOBALLY TO MIX THEM
+            // This ensures Series 1, 2, 3... are random chunks of the total pool each time
+            this.state.questions = this.shuffleArray([...allQuestions]);
             this.renderSeriesList();
         } else {
             console.error("Data source 'allQuestions' not found!");
             document.getElementById('series-list').innerHTML = "<p style='color:red'>Erreur: Données non chargées. Vérifiez quiz_data.js</p>";
         }
+    },
+    
+    // Fisher-Yates Shuffle
+    shuffleArray: function(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
     },
 
     loadHistory: function() {
@@ -42,32 +53,17 @@ const App = {
         }
     },
 
-    saveHistory: function(result) {
-        this.state.userHistory.push(result);
-        localStorage.setItem('ccna2_history', JSON.stringify(this.state.userHistory));
-        this.renderstats();
-    },
-
-    renderstats: function() {
-        const history = this.state.userHistory;
-        const totalAttempts = history.length;
-        let totalScore = 0;
-        let maxScore = 0;
-        const uniqueSeries = new Set();
-        
+    save
         history.forEach(h => {
              totalScore += h.score;
              maxScore += h.total;
-             uniqueSeries.add(h.seriesId);
         });
 
         const avg = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-        const seriesCount = Math.ceil(this.state.questions.length / 10);
-        const progress = Math.round((uniqueSeries.size / seriesCount) * 100);
-
+        
         // Header Mini Stats
         const headerStats = document.getElementById('global-stats');
-        if (headerStats) headerStats.textContent = `Moyenne: ${avg}% | Complété: ${progress}%`;
+        if (headerStats) headerStats.textContent = `Moyenne Globale: ${avg}%`;
 
         // Dashboard Stats
         const dash = document.getElementById('stats-dashboard');
@@ -79,11 +75,7 @@ const App = {
                 </div>
                 <div class="stat-metric">
                     <h3>${totalAttempts}</h3>
-                    <span>Quiz Terminés</span>
-                </div>
-                <div class="stat-metric">
-                    <h3>${uniqueSeries.size} / ${seriesCount}</h3>
-                    <span>Séries Uniques</span>
+                    <span>Examens Terminés</span>
                 </div>
             `;
         }
@@ -95,30 +87,36 @@ const App = {
         grid.innerHTML = '';
 
         const totalQ = this.state.questions.length;
-        const chunkSize = 10;
+        // CHANGED CHUNK SIZE TO 60
+        const chunkSize = 60;
         const totalSeries = Math.ceil(totalQ / chunkSize);
 
         for (let i = 1; i <= totalSeries; i++) {
             const btn = document.createElement('div');
             btn.className = 'btn-series';
             
-            // Check best score for this series
-            const best = this.state.userHistory
-                .filter(h => h.seriesId === i)
-                .reduce((max, curr) => (curr.score > max ? curr.score : max), -1);
+            // Stats per series ID are less relevant in random mode, 
+            // but we can still show the last score for "Session #1" if we wanted, 
+            // but simpler to just show "Examen Blanc #i"
             
-            let badge = '';
-            if (best >= 0) {
-                const color = best >= 8 ? 'green' : (best >= 5 ? 'orange' : 'red');
-                badge = `<span style="float:right; color:${color}; font-weight:bold;">${best}/10</span>`;
-            }
-
             btn.innerHTML = `
-                <h4>Série ${i} ${badge}</h4>
-                <span>Questions ${(i-1)*10 + 1} - ${Math.min(i*10, totalQ)}</span>
+                <h4><i class="fas fa-random"></i> Série Mélangée ${i}</h4>
+                <span>Questions ${(i-1)*chunkSize + 1} - ${Math.min(i*chunkSize, totalQ)}</span>
             `;
             btn.onclick = () => this.startSeries(i);
             grid.appendChild(btn);
+        }
+    },
+
+    startSeries: function(id) {
+        this.state.currentSeries = id;
+        const chunkSize = 60;
+        const startIdx = (id - 1) * chunkSize;
+        this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + chunkSize);
+        
+        this.switchView('quiz');
+        document.getElementById('quiz-title').textContent = `Série Mélangée ${id}`;
+        document.getElementById('quiz-progress-text').textContent = `${this.state.currentQuestions.length}
         }
     },
 
