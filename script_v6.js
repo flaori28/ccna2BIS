@@ -305,14 +305,12 @@ const App = {
                     html += `<div class="explanation-box" id="expl-${index}">${q.explanation}</div>`;
                 }
 
-                // Training Mode: Check Button
-                if (this.state.currentMode === 'training') {
-                    html += `
-                        <div class="card-footer" style="margin-top:15px; text-align:right;">
-                             <button type="button" class="btn-check" onclick="App.checkSingleQuestion(${index}, this)">Vérifier la réponse</button>
-                        </div>
-                    `;
-                }
+                // Always show check button everywhere
+                html += `
+                    <div class="card-footer" style="margin-top:15px; text-align:right;">
+                         <button type="button" class="btn-check" onclick="App.checkSingleQuestion(${index}, this)">Vérifier la réponse</button>
+                    </div>
+                `;
 
                 card.innerHTML = html;
                 container.appendChild(card);
