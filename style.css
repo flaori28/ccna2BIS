@@ -25,7 +25,7 @@ body {
 }
 
 .app-container {
-    max-width: 1200px;
+    max-width: 95%; /* More width on large screens */
     margin: 0 auto;
     padding: 20px;
 }
@@ -201,8 +201,9 @@ body {
 
 .options-list {
     display: grid;
+    /* Force minimum of 2 columns on most screens (500px+) */
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 15px;
+    gap: 12px;
     margin-top: 15px;
 }
 
@@ -210,13 +211,14 @@ body {
     display: flex; /* Better alignment */
     align-items: flex-start; /* Align checkbox to top of multi-line text */
     margin-bottom: 0; /* Let grid handle gap */
-    padding: 15px;
+    padding: 10px 15px; /* Compact padding */
     border: 1px solid #ddd;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
     background: #fff;
     line-height: 1.4;
+    min-width: 0; /* Fix flex overflow */
 }
 
 .opt-item:hover {
