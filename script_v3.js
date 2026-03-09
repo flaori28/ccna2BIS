@@ -14,21 +14,44 @@ const App = {
 
     init: function() {
         console.log("App Initializing...");
-        this.loadData();
-        this.loadHistory();
-        this.setupNavigation();
-        this.renderstats();
+        // Update loading text
+        const loader = document.getElementById('global-stats');
+        if (loader) loader.innerHTML = '<span>Initialisation...</span>';
+
+        try {
+            this.loadHistory();
+            this.loadData();
+            this.setupNavigation();
+            this.renderstats();
+        } catch (err) {
+            console.error("Init Error", err);
+            if (loader) loader.innerHTML = `<span style="color:red">Erreur !</span>`;
+            alert("Erreur de chargement: " + err.message);
+        }
     },
 
     loadData: function() {
+        const grid = document.getElementById('series-list');
+        
         if (typeof allQuestions !== 'undefined' && Array.isArray(allQuestions)) {
             // SHUFFLE QUESTIONS GLOBALLY TO MIX THEM
-            // This ensures Series 1, 2, 3... are random chunks of the total pool each time
-            this.state.questions = this.shuffleArray([...allQuestions]);
-            this.renderSeriesList();
+            try {
+                this.state.questions = this.shuffleArray([...allQuestions]);
+                this.renderSeriesList();
+            } catch (e) {
+                console.error("Error processing questions:", e);
+                if (grid) grid.innerHTML = "<p style='color:red'>Erreur critique lors du traitement des questions.</p>";
+            }
         } else {
             console.error("Data source 'allQuestions' not found!");
-            document.getElementById('series-list').innerHTML = "<p style='color:red'>Erreur: Données non chargées. Vérifiez quiz_data.js</p>";
+            if (grid) grid.innerHTML = "<p style='color:red; font-weight:bold; padding:20px; border:1px solid red;'>ERREUR: Le fichier de questions (quiz_data.js) semble manquant ou corrompu. Essayez de rafraîchir la page (Ctrl+F5).</p>";
+            
+            // Allow retry
+            const retryBtn = document.createElement('button');
+            retryBtn.textContent = "Réessayer le chargement";
+            retryBtn.onclick = () => window.location.reload();
+            retryBtn.style.marginTop = "10px";
+            if (grid) grid.appendChild(retryBtn);
         }
     },
     
@@ -42,20 +65,24 @@ const App = {
     },
 
     loadHistory: function() {
-        const raw = localStorage.getItem('ccna2_history');
-        if (raw) {
-            try {
+        try {
+            const raw = localStorage.getItem('ccna2_history');
+            if (raw) {
                 this.state.userHistory = JSON.parse(raw);
-            } catch (e) {
-                console.warn("History corrupted, resetting.");
-                this.state.userHistory = [];
             }
+        } catch (e) {
+            console.warn("History access failed or corrupted (Private Mode?):", e);
+            this.state.userHistory = [];
         }
     },
 
     saveHistory: function(result) {
-        this.state.userHistory.push(result);
-        localStorage.setItem('ccna2_history', JSON.stringify(this.state.userHistory));
+        try {
+            this.state.userHistory.push(result);
+            localStorage.setItem('ccna2_history', JSON.stringify(this.state.userHistory));
+        } catch(e) {
+            console.warn("Could not save history:", e);
+        }
         this.renderstats();
     },
 
@@ -443,5 +470,14 @@ function resetAllData() {
 
 // Bootstrap
 document.addEventListener('DOMContentLoaded', () => {
-    App.init();
+    try {
+        App.init();
+    } catch (e) {
+        console.error("Critical App Crash:", e);
+        document.body.innerHTML = `<div style="padding:20px; color:red;">
+            <h2>Erreur Critique</h2>
+            <p>Le site n'a pas pu charger correctement.</p>
+            <pre>${e.message}</pre>
+        </div>`;
+    }
 });
