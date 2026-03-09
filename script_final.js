@@ -45,15 +45,18 @@ const App = {
         if (typeof allQuestions !== 'undefined' && Array.isArray(allQuestions)) {
             // SHUFFLE QUESTIONS GLOBALLY TO MIX THEM
             try {
+                if (allQuestions.length === 0) {
+                     throw new Error("Le fichier de questions est vide (0 questions).");
+                }
                 this.state.questions = this.shuffleArray([...allQuestions]);
                 this.renderSeriesList();
             } catch (e) {
                 console.error("Error processing questions:", e);
-                if (grid) grid.innerHTML = "<p style='color:red'>Erreur critique lors du traitement des questions.</p>";
+                if (grid) grid.innerHTML = `<p style='color:red; user-select:text;'>Erreur critique lors du traitement des questions: ${e.message}</p>`;
             }
         } else {
             console.error("Data source 'allQuestions' not found!");
-            if (grid) grid.innerHTML = "<p style='color:red; font-weight:bold; padding:20px; border:1px solid red;'>ERREUR: Le fichier de questions (quiz_data.js) semble manquant ou corrompu. Essayez de rafraîchir la page (Ctrl+F5).</p>";
+            if (grid) grid.innerHTML = "<p style='color:red; font-weight:bold; padding:20px; border:1px solid red;'>ERREUR: Les questions (data_final.js) ne sont pas chargées. Vérifiez votre connexion ou l'URL.</p>";
             
             // Allow retry
             const retryBtn = document.createElement('button');
@@ -195,44 +198,59 @@ const App = {
 
     renderQuizForm: function() {
         const container = document.getElementById('questions-container');
+        if(!container) return;
         container.innerHTML = '';
 
+        if(this.state.currentQuestions.length === 0) {
+            container.innerHTML = '<p class="error-msg">Aucune question dans cette série.</p>';
+            return;
+        }
+
         this.state.currentQuestions.forEach((q, index) => {
-            const card = document.createElement('div');
-            card.className = 'q-card';
-            card.dataset.id = q.id;
-            card.dataset.index = index;
+            try {
+                const card = document.createElement('div');
+                card.className = 'q-card';
+                card.dataset.id = q.id;
+                card.dataset.index = index;
 
-            // Header: Question Text & Image
-            let html = `<h3>${index+1}. ${q.question}</h3>`;
-            if (q.image) {
-                html += `<img src="${q.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px;">`;
+                // Header: Question Text & Image
+                let html = `<h3>${index+1}. ${q.question}</h3>`;
+                if (q.image) {
+                    html += `<img src="${q.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px;" loading="lazy">`;
+                }
+
+                // Body: Options or Match
+                html += '<div class="q-body">';
+                
+                if (q.type === 'match' || (q.match_pairs && Array.isArray(q.match_pairs) && q.match_pairs.length > 0)) {
+                    // RENDER MATCH
+                    html += this.renderMatchQuestion(q, index);
+                } else {
+                    // RENDER STANDARD
+                    html += this.renderStandardOptions(q, index);
+                }
+                
+                html += '</div>';
+
+                // Footer: Explanation (Hidden)
+                if (q.explanation) {
+                    html += `<div class="explanation-box" id="expl-${index}">${q.explanation}</div>`;
+                }
+
+                card.innerHTML = html;
+                container.appendChild(card);
+            } catch(e) {
+                console.warn(`Skipping malformed question #${q.id}:`, e);
+                const errDiv = document.createElement('div');
+                errDiv.style.color = 'red';
+                errDiv.style.padding = '10px';
+                errDiv.innerText = `Erreur d'affichage question #${index+1} (ID: ${q.id})`;
+                container.appendChild(errDiv);
             }
-
-            // Body: Options or Match
-            html += '<div class="q-body">';
-            
-            if (q.type === 'match' || (q.match_pairs && q.match_pairs.length > 0)) {
-                // RENDER MATCH
-                html += this.renderMatchQuestion(q, index);
-            } else {
-                // RENDER STANDARD
-                html += this.renderStandardOptions(q, index);
-            }
-            
-            html += '</div>';
-
-            // Footer: Explanation (Hidden)
-            if (q.explanation) {
-                html += `<div class="explanation-box" id="expl-${index}">${q.explanation}</div>`;
-            }
-
-            card.innerHTML = html;
-            container.appendChild(card);
         });
 
         // Re-init Drag & Drop listeners
-        this.initDragDrop();
+        setTimeout(() => this.initDragDrop(), 100);
     },
 
     renderMatchQuestion: function(q, qIndex) {
