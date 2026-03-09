@@ -101,9 +101,17 @@ body {
 
 .series-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    /* Wide cards layout: min 350px width ensures they look like rectangles, not squares */
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 15px;
     /* Ensure only items inside take space, not the container itself affecting parent flow unexpectedly */
+}
+
+/* On very small mobile screens, fallback to 1 column */
+@media (max-width: 400px) {
+    .series-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Custom Tab Style */
