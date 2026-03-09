@@ -155,111 +155,100 @@ const App = {
         }
     },
 
+    // --- HELPERS FOR NEW MENU ---
+    startExamenMode: function() {
+        this.state.questions = this.shuffleArray([...allQuestions]);
+        this.startSeries(1, 60, "Mode Examen");
+    },
+    
+    startIntegralMode: function() {
+        this.state.questions = this.shuffleArray([...allQuestions]);
+        const total = this.state.questions.length;
+        this.startSeries(1, total, "Mode Intégral");
+    },
+
+    startTrainingMode: function() {
+        this.state.questions = this.shuffleArray([...allQuestions]);
+        this.startSeries(1, 60, "Mode Entraînement");
+    },
+
     renderSeriesList: function() {
         const grid = document.getElementById('series-list');
         if (!grid) return;
         grid.innerHTML = '';
 
         const totalQ = this.state.questions.length;
-
-        // --- CUSTOM TAB CONTAINER ---
-        const tabsContainer = document.createElement('div');
-        tabsContainer.className = 'tab-container';
         
-        const btnExamTab = document.createElement('button');
-        btnExamTab.textContent = "Mode Examen (60)";
-        btnExamTab.className = 'btn-tab';
+        // --- CUSTOM MENU BASED ON USER IMAGE ---
+        grid.innerHTML = `
+            <div class="menu-actions">
+                <!-- BLUE: Training Mode -->
+                <button class="action-btn btn-blue" id="btn-train-mode">
+                    <div style="flex:1">
+                        <span class="action-title">Mode Entraînement</span>
+                        <span class="action-desc">60 questions aléatoires. Correction immédiate.</span>
+                    </div>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <!-- DARK: Exam Mode -->
+                <button class="action-btn btn-dark" id="btn-exam-mode">
+                    <div style="flex:1">
+                        <span class="action-title">Mode Examen</span>
+                        <span class="action-desc">60 questions aléatoires. Résultat final.</span>
+                    </div>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+
+                <!-- ORANGE: Integral Mode -->
+                <button class="action-btn btn-orange" id="btn-integral-mode">
+                    <div style="flex:1">
+                        <span class="action-title">Mode Intégral</span>
+                        <span class="action-desc">Toutes les questions (mix également). Mode entraînement.</span>
+                    </div>
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                    
+                <!-- GREY: History -->
+                 <button class="action-btn btn-grey" onclick="showDashboard()" style="margin-top:10px; display:none;">
+                    <span class="action-title" style="font-size:1rem">Voir mon Historique</span>
+                </button>
+            </div>
+            
+            <h3 class="series-section-title">Séries (10 questions)</h3>
+            <div class="mini-series-grid" id="mini-grid"></div>
+        `;
+
+        // Bind Events manually to avoid inline JS scope issues with "App"
+        document.getElementById('btn-train-mode').onclick = () => this.startTrainingMode();
+        document.getElementById('btn-exam-mode').onclick = () => this.startExamenMode();
+        document.getElementById('btn-integral-mode').onclick = () => this.startIntegralMode();
+
+
+        // Render Mini Series Grid
+        const miniGrid = document.getElementById('mini-grid');
+        const chunkSize = 10;
+        const totalSeries = Math.ceil(totalQ / chunkSize);
         
-        const btnTrainTab = document.createElement('button');
-        btnTrainTab.textContent = "Mode Série (10)";
-        btnTrainTab.className = 'btn-tab active';
-
-        tabsContainer.appendChild(btnExamTab);
-        tabsContainer.appendChild(btnTrainTab);
-        grid.appendChild(tabsContainer);
-
-        // --- CONTENT CONTAINER ---
-        const contentContainer = document.createElement('div');
-        contentContainer.className = 'series-grid'; // Use grid layout
-        contentContainer.style.width = '100%';
-        grid.appendChild(contentContainer);
-
-        const renderExamMode = () => {
-            contentContainer.innerHTML = '';
-            
-            // Tab Styles
-            btnExamTab.classList.add('active');
-            btnExamTab.classList.remove('btn-tab-inactive');
-            btnTrainTab.classList.remove('active');
-            
-            const chunkExam = 60;
-            const totalExams = Math.ceil(totalQ / chunkExam);
-
-            if(totalExams === 0) {
-                 contentContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune question disponible.</p>';
-                 return;
-            }
-
-            for (let i = 1; i <= totalExams; i++) {
-                const btn = document.createElement('div');
-                btn.className = 'btn-series';
-                // Distinctive styling for Exams
-                btn.style.borderLeft = '6px solid #0078d4';
-                btn.innerHTML = `
-                    <h4 style="color:#0078d4"><i class="fas fa-file-contract"></i> Examen ${i}</h4>
-                    <span style="display:block; margin-top:5px; font-weight:500;">60 Questions</span>
-                    <span style="font-size:0.8rem; color:#888;">Index: ${(i-1)*chunkExam + 1}-${Math.min(i*chunkExam, totalQ)}</span>
-                `;
-                btn.onclick = () => this.startSeries(i, 60, `Examen Blanc ${i}`);
-                contentContainer.appendChild(btn);
-            }
-        };
-
-        const renderTrainMode = () => {
-            contentContainer.innerHTML = '';
-
-            // Tab Styles
-            btnTrainTab.classList.add('active');
-            btnExamTab.classList.remove('active');
-
-            const chunkTrain = 10;
-            const totalTrain = Math.ceil(totalQ / chunkTrain);
-
-            if(totalTrain === 0) {
-                 contentContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune question disponible.</p>';
-                 return;
-            }
-
-            for (let i = 1; i <= totalTrain; i++) {
-                const btn = document.createElement('div');
-                btn.className = 'btn-series';
-                // Distinctive styling for Training
-                btn.style.borderLeft = '6px solid #107c10'; 
-                btn.innerHTML = `
-                    <h4 style="color:#107c10"><i class="fas fa-bolt"></i> Série ${i}</h4>
-                    <span style="display:block; margin-top:5px; font-weight:500;">10 Questions</span>
-                    <span style="font-size:0.8rem; color:#888;">Index: ${(i-1)*chunkTrain + 1}-${Math.min(i*chunkTrain, totalQ)}</span>
-                `;
-                btn.onclick = () => this.startSeries(i, 10, `Série ${i}`);
-                contentContainer.appendChild(btn);
-            }
-        };
-
-        // Bind clicks
-        btnExamTab.onclick = renderExamMode;
-        btnTrainTab.onclick = renderTrainMode;
-
-        // Default view
-        renderTrainMode(); 
+        for (let i = 1; i <= totalSeries; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-mini';
+            btn.textContent = `Série ${i}`;
+            btn.onclick = () => this.startSeries(i, 10, `Série ${i}`);
+            miniGrid.appendChild(btn);
+        }
     },
-
+    
     startSeries: function(id, size = 60, title = 'Quiz') {
         this.state.currentSeries = id;
         this.state.currentChunkSize = size;
         this.state.currentTitle = title;
         
         const startIdx = (id - 1) * size;
-        this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + size);
+        // Safety bound
+        const endIdx = Math.min(startIdx + size, this.state.questions.length);
+        
+        this.state.currentQuestions = this.state.questions.slice(startIdx, endIdx);
         
         this.switchView('quiz');
         document.getElementById('quiz-title').textContent = title;
