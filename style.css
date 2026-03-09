@@ -200,25 +200,37 @@ body {
 }
 
 .options-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 15px;
     margin-top: 15px;
 }
 
 .opt-item {
-    display: block;
-    margin-bottom: 10px;
-    padding: 12px;
+    display: flex; /* Better alignment */
+    align-items: flex-start; /* Align checkbox to top of multi-line text */
+    margin-bottom: 0; /* Let grid handle gap */
+    padding: 15px;
     border: 1px solid #ddd;
     border-radius: 6px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    background: #fff;
+    line-height: 1.4;
 }
 
 .opt-item:hover {
     background: var(--primary-light);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .opt-item input {
-    margin-right: 10px;
+    margin-right: 12px;
+    margin-top: 4px; /* Align with text */
+    accent-color: var(--primary); /* Modern checkbox color */
+    transform: scale(1.2); /* Slightly larger inputs */
 }
 
 .quiz-footer {
