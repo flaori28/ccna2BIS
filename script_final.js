@@ -1,6 +1,6 @@
 /**
- * CCNA 2 Exam Trainer - Core Logic v3.0
- * Completely rewritten for stability and performance.
+ * CCNA 2 Exam Trainer - Core Logic v3.1 (Final)
+ * Includes robust error handling and click-to-move for mobile.
  */
 
 const App = {
@@ -9,12 +9,21 @@ const App = {
         currentSeries: null,
         currentQuestions: [],
         userHistory: [],
-        view: 'dashboard'
+        view: 'dashboard',
+        selectedDraggable: null // for click-to-move fallback
     },
 
     init: function() {
         console.log("App Initializing...");
-        // Update loading text
+        // Global Error Handler
+        window.onerror = function(msg, url, line, col, error) {
+            const errBox = document.createElement('div');
+            errBox.style.cssText = "position:fixed; top:0; left:0; width:100%; background:red; color:white; z-index:9999; padding:10px;";
+            errBox.innerText = `Erreur JS: ${msg} (Ligne ${line})`;
+            document.body.prepend(errBox);
+            return false;
+        };
+
         const loader = document.getElementById('global-stats');
         if (loader) loader.innerHTML = '<span>Initialisation...</span>';
 
@@ -68,7 +77,15 @@ const App = {
         try {
             const raw = localStorage.getItem('ccna2_history');
             if (raw) {
-                this.state.userHistory = JSON.parse(raw);
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) {
+                    this.state.userHistory = parsed;
+                } else {
+                    console.warn("History format invalid (not an array), resetting.");
+                    this.state.userHistory = [];
+                }
+            } else {
+                this.state.userHistory = [];
             }
         } catch (e) {
             console.warn("History access failed or corrupted (Private Mode?):", e);
@@ -78,6 +95,7 @@ const App = {
 
     saveHistory: function(result) {
         try {
+            if (!Array.isArray(this.state.userHistory)) this.state.userHistory = [];
             this.state.userHistory.push(result);
             localStorage.setItem('ccna2_history', JSON.stringify(this.state.userHistory));
         } catch(e) {
@@ -87,35 +105,48 @@ const App = {
     },
 
     renderstats: function() {
-        const history = this.state.userHistory;
-        const totalAttempts = history.length;
-        let totalScore = 0;
-        let maxScore = 0;
-        
-        history.forEach(h => {
-             totalScore += h.score;
-             maxScore += h.total;
-        });
+        try {
+            const history = this.state.userHistory || [];
+            if (!Array.isArray(history)) {
+                 // Should be caught by loadHistory but safe guard
+                 return;
+            }
+            
+            const totalAttempts = history.length;
+            let totalScore = 0;
+            let maxScore = 0;
+            
+            history.forEach(h => {
+                if (h && typeof h.score === 'number' && typeof h.total === 'number') {
+                    totalScore += h.score;
+                    maxScore += h.total;
+                }
+            });
 
-        const avg = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
-        
-        // Header Mini Stats
-        const headerStats = document.getElementById('global-stats');
-        if (headerStats) headerStats.textContent = `Moyenne Globale: ${avg}%`;
+            const avg = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+            
+            // Header Mini Stats
+            const headerStats = document.getElementById('global-stats');
+            if (headerStats) headerStats.textContent = `Moyenne Globale: ${avg}%`;
 
-        // Dashboard Stats
-        const dash = document.getElementById('stats-dashboard');
-        if (dash) {
-            dash.innerHTML = `
-                <div class="stat-metric">
-                    <h3>${avg}%</h3>
-                    <span>Moyenne</span>
-                </div>
-                <div class="stat-metric">
-                    <h3>${totalAttempts}</h3>
-                    <span>Examens Terminés</span>
-                </div>
-            `;
+            // Dashboard Stats
+            const dash = document.getElementById('stats-dashboard');
+            if (dash) {
+                dash.innerHTML = `
+                    <div class="stat-metric">
+                        <h3>${avg}%</h3>
+                        <span>Moyenne</span>
+                    </div>
+                    <div class="stat-metric">
+                        <h3>${totalAttempts}</h3>
+                        <span>Examens Terminés</span>
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error("renderStats Error:", error);
+            const headerStats = document.getElementById('global-stats');
+            if (headerStats) headerStats.textContent = "Erreur Stats";
         }
     },
 
@@ -380,7 +411,50 @@ const App = {
         const draggables = document.querySelectorAll('.draggable-item');
         const dropzones = document.querySelectorAll('.target-zone, .draggable-bank');
 
+        // Click-to-move Logic (Mobile Friendly)
+        const handleItemClick = (e) => {
+            e.stopPropagation(); // prevent bubbling to zone
+            const item = e.currentTarget;
+            
+            // Remove previous selection style
+            if (this.state.selectedDraggable) {
+                this.state.selectedDraggable.classList.remove('selected-item');
+            }
+
+            // Toggle selection
+            if (this.state.selectedDraggable === item) {
+                this.state.selectedDraggable = null;
+            } else {
+                this.state.selectedDraggable = item;
+                item.classList.add('selected-item');
+            }
+        };
+
+        const handleZoneClick = (e) => {
+             const zone = e.currentTarget;
+             const selected = this.state.selectedDraggable;
+             
+             if (selected) {
+                 // Logic from drop handler
+                 if (zone.classList.contains('target-zone')) {
+                    if (zone.children.length > 0) {
+                        const existing = zone.children[0];
+                        const bankId = zone.closest('.match-area').querySelector('.draggable-bank').id;
+                        document.getElementById(bankId).appendChild(existing);
+                    }
+                    zone.appendChild(selected);
+                 } else if (zone.classList.contains('draggable-bank')) {
+                    zone.appendChild(selected);
+                 }
+                 
+                 // Clear selection
+                 selected.classList.remove('selected-item');
+                 this.state.selectedDraggable = null;
+             }
+        };
+
         draggables.forEach(d => {
+            d.draggable = true;
             d.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', e.target.id);
                 setTimeout(() => {
@@ -391,6 +465,8 @@ const App = {
                 e.target.style.opacity = '1';
                 e.target.style.display = 'block';
             });
+            // Add click listener
+            d.addEventListener('click', handleItemClick);
         });
 
         dropzones.forEach(zone => {
@@ -406,30 +482,39 @@ const App = {
             zone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 zone.classList.remove('drag-hover');
-                const id = e.dataTransfer.getData('text/plain');
-                const draggable = document.getElementById(id);
-                
-                if (!draggable) return;
+                try {
+                    const id = e.dataTransfer.getData('text/plain');
+                    const draggable = document.getElementById(id);
+                    
+                    if (!draggable) return;
 
-                // Scenario: Dropping into a Target Zone (Answer slot)
-                if (zone.classList.contains('target-zone')) {
-                    // Check if occupied
-                    if (zone.children.length > 0) {
-                        // Move existing item back to bank (or swap? let's stick to bank for simplicity)
-                        const existing = zone.children[0];
-                        const bankId = zone.closest('.match-area').querySelector('.draggable-bank').id;
-                        document.getElementById(bankId).appendChild(existing);
+                    // Scenario: Dropping into a Target Zone (Answer slot)
+                    if (zone.classList.contains('target-zone')) {
+                        // Check if occupied
+                        if (zone.children.length > 0) {
+                            // Move existing item back to bank
+                            const existing = zone.children[0];
+                            const matchArea = zone.closest('.match-area');
+                            if(matchArea) {
+                                const bank = matchArea.querySelector('.draggable-bank');
+                                if(bank) bank.appendChild(existing);
+                            }
+                        }
+                        zone.appendChild(draggable);
+                    } 
+                    // Scenario: Dropping back into Bank
+                    else if (zone.classList.contains('draggable-bank')) {
+                        zone.appendChild(draggable);
                     }
-                    zone.appendChild(draggable);
-                } 
-                // Scenario: Dropping back into Bank
-                else if (zone.classList.contains('draggable-bank')) {
-                    zone.appendChild(draggable);
+                    
+                    draggable.style.opacity = '1';
+                    draggable.style.display = 'block';
+                } catch(err) {
+                    console.error("Drop Error", err);
                 }
-                
-                draggable.style.opacity = '1';
-                draggable.style.display = 'block';
             });
+            // Add click listener
+            zone.addEventListener('click', handleZoneClick);
         });
     },
 

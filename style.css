@@ -363,3 +363,4 @@ body {
     background-color: #fff3cd !important;
     border-color: #ffeeba !important;
 }
+.selected-item { border: 2px solid #0056b3; background-color: #e2e6ea; }
