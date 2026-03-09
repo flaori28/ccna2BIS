@@ -527,3 +527,453 @@ body {
     box-shadow: 0 0 8px rgba(0, 120, 212, 0.4);
     transform: scale(1.02);
 }
+
+/* --- NEW STYLES FOR STEP-BY-STEP QUIZ --- */
+
+/* Card Container */
+.q-card.single-view-card {
+    background: #fff;
+    border: 1px solid #e1dfdd;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Softer shadow */
+}
+
+/* Header */
+.quiz-progress-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #605e5c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #f3f2f1;
+    padding-bottom: 8px;
+}
+
+/* Question Content */
+.q-text {
+    font-size: 1.2rem;
+    color: #201f1e;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.q-image-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.q-image-container img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 4px;
+    border: 1px solid #edebe9;
+}
+
+/* Options Styling Update */
+.opt-item {
+    display: flex;
+    align-items: flex-start; /* Align top for multiline text */
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border: 2px solid #e1dfdd; /* Default border */
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.opt-item:hover {
+    background: #f3f2f1;
+    border-color: #8a8886;
+}
+
+.opt-item input {
+    margin-top: 4px; /* Align check with first line of text */
+    margin-right: 12px;
+    transform: scale(1.2);
+}
+
+
+/* Validation States */
+.opt-item.correct-highlight {
+    background-color: #dff6dd !important; /* Light Green */
+    border-color: #107c10 !important;
+}
+
+.opt-item.wrong-highlight {
+    background-color: #fde7e9 !important; /* Light Red */
+    border-color: #d13438 !important;
+}
+
+.opt-item.missed-highlight {
+    background-color: #fff4ce !important; /* Light Yellow */
+    border-color: #d13438 !important; /* Red Border to indicate mistake */
+    border-style: dashed !important;
+}
+
+/* Badges */
+.badge-correct {
+    display: inline-block;
+    background: #107c10;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: auto; /* Push to right */
+    white-space: nowrap;
+}
+
+.badge-wrong {
+    display: inline-block;
+    background: #d13438;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: auto; /* Push to right */
+    white-space: nowrap;
+}
+
+/* Explanation Box */
+.explanation-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-left: 4px solid #0078d4;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #323130;
+}
+
+.explanation-box.hidden {
+    display: none;
+}
+
+.explanation-box.visible {
+    display: block;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Footer Navigation */
+.card-footer-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #edebe9;
+    background: #fff; /* Ensure bg is white */
+}
+
+/* Buttons */
+.btn-nav, .btn-verify {
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px; /* Touch target */
+}
+
+/* Prev */
+.btn-nav.prev-btn {
+    background: #f3f2f1;
+    color: #605e5c;
+    border: 1px solid #e1dfdd;
+}
+.btn-nav.prev-btn:hover {
+    background: #edebe9;
+    color: #323130;
+}
+.btn-nav.prev-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Next / Finish */
+.btn-nav.next-btn {
+    background: #0078d4;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 120, 212, 0.2);
+}
+.btn-nav.next-btn:hover {
+    background: #106ebe;
+    box-shadow: 0 4px 8px rgba(0, 120, 212, 0.3);
+}
+
+/* Verify */
+.btn-verify {
+    background: white;
+    border: 2px solid #0078d4;
+    color: #0078d4;
+    min-width: 140px;
+}
+.btn-verify:hover:not(:disabled) {
+    background: #eff6fc;
+}
+.btn-verify:disabled {
+    background: #f3f2f1;
+    border-color: #e1dfdd;
+    color: #a19f9d;
+    cursor: default;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .card-footer-nav {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .btn-nav, .btn-verify {
+        width: 100%;
+    }
+    .btn-nav.prev-btn { order: 3; }
+    .btn-verify { order: 1; }
+    .btn-nav.next-btn { order: 2; }
+}
+
+/* --- NEW STYLES FOR STEP-BY-STEP QUIZ --- */
+
+/* Card Container */
+.q-card.single-view-card {
+    background: #fff;
+    border: 1px solid #e1dfdd;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Softer shadow */
+}
+
+/* Header */
+.quiz-progress-header {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #605e5c;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #f3f2f1;
+    padding-bottom: 8px;
+}
+
+/* Question Content */
+.q-text {
+    font-size: 1.2rem;
+    color: #201f1e;
+    margin-bottom: 20px;
+    line-height: 1.4;
+}
+
+.q-image-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.q-image-container img {
+    max-width: 100%;
+    max-height: 400px;
+    border-radius: 4px;
+    border: 1px solid #edebe9;
+}
+
+/* Options Styling Update */
+.opt-item {
+    display: flex;
+    align-items: flex-start; /* Align top for multiline text */
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border: 2px solid #e1dfdd; /* Default border */
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #fff;
+}
+
+.opt-item:hover {
+    background: #f3f2f1;
+    border-color: #8a8886;
+}
+
+.opt-item input {
+    margin-top: 4px; /* Align check with first line of text */
+    margin-right: 12px;
+    transform: scale(1.2);
+}
+
+
+/* Validation States */
+.opt-item.correct-highlight {
+    background-color: #dff6dd !important; /* Light Green */
+    border-color: #107c10 !important;
+}
+
+.opt-item.wrong-highlight {
+    background-color: #fde7e9 !important; /* Light Red */
+    border-color: #d13438 !important;
+}
+
+.opt-item.missed-highlight {
+    background-color: #fff4ce !important; /* Light Yellow */
+    border-color: #d13438 !important; /* Red Border to indicate mistake */
+    border-style: dashed !important;
+}
+
+/* Badges */
+.badge-correct {
+    display: inline-block;
+    background: #107c10;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: auto; /* Push to right */
+    white-space: nowrap;
+}
+
+.badge-wrong {
+    display: inline-block;
+    background: #d13438;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: auto; /* Push to right */
+    white-space: nowrap;
+}
+
+/* Explanation Box */
+.explanation-box {
+    margin-top: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-left: 4px solid #0078d4;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #323130;
+}
+
+.explanation-box.hidden {
+    display: none;
+}
+
+.explanation-box.visible {
+    display: block;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Footer Navigation */
+.card-footer-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #edebe9;
+    background: #fff; /* Ensure bg is white */
+}
+
+/* Buttons */
+.btn-nav, .btn-verify {
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Prev */
+.btn-nav.prev-btn {
+    background: #f3f2f1;
+    color: #605e5c;
+    border: 1px solid #e1dfdd;
+}
+.btn-nav.prev-btn:hover {
+    background: #edebe9;
+    color: #323130;
+}
+.btn-nav.prev-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Next / Finish */
+.btn-nav.next-btn {
+    background: #0078d4;
+    color: white;
+    box-shadow: 0 2px 4px rgba(0, 120, 212, 0.2);
+}
+.btn-nav.next-btn:hover {
+    background: #106ebe;
+    box-shadow: 0 4px 8px rgba(0, 120, 212, 0.3);
+}
+
+/* Verify */
+.btn-verify {
+    background: white;
+    border: 2px solid #0078d4;
+    color: #0078d4;
+    min-width: 140px;
+}
+.btn-verify:hover:not(:disabled) {
+    background: #eff6fc;
+}
+.btn-verify:disabled {
+    background: #f3f2f1;
+    border-color: #e1dfdd;
+    color: #a19f9d;
+    cursor: default;
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+    .card-footer-nav {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .btn-nav, .btn-verify {
+        width: 100%;
+    }
+    .card-footer-nav {
+        flex-direction: column-reverse; /* Put 'Next' on top naturally? No, let's keep order but stack */
+    }
+    /* Natural Order: Prev, Verify, Next. Column: Prev (top), Verify, Next (bottom) */
+    .card-footer-nav {
+       flex-direction: column; 
+    }
+    /* Let's reorder with flex order if needed. Usually Prev is less important explicitly. */
+    .btn-nav.prev-btn { order: 3; }
+    .btn-verify { order: 1; }
+    .btn-nav.next-btn { order: 2; }
+}
+

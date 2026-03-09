@@ -241,6 +241,9 @@ const App = {
         this.state.currentChunkSize = size;
         this.state.currentTitle = title;
         this.state.currentMode = mode;
+        this.state.currentQuestionIndex = 0; // Initialize index
+        this.state.validatedQuestions = new Set(); // Track validated questions
+        this.state.results = {}; // Track correctness of each question
         
         const startIdx = (id - 1) * size;
         const endIdx = Math.min(startIdx + size, this.state.questions.length);
@@ -249,16 +252,6 @@ const App = {
         
         this.switchView('quiz');
         document.getElementById('quiz-title').textContent = title;
-        
-        const prog = document.getElementById('quiz-progress-text');
-        if(prog) prog.textContent = `${this.state.currentQuestions.length} Questions`;
-        
-        // Hide global validate btn if training? No, keep it to finish.
-        // But maybe rename it?
-        const valBtn = document.getElementById('btn-validate');
-        if(valBtn) {
-            valBtn.textContent = (mode === 'training') ? "Terminer et voir le score" : "Valider les réponses";
-        }
         
         this.renderQuizForm();
         window.scrollTo(0,0);
@@ -274,117 +267,129 @@ const App = {
             return;
         }
 
-        this.state.currentQuestions.forEach((q, index) => {
-            try {
-                const card = document.createElement('div');
-                card.className = 'q-card';
-                card.dataset.id = q.id;
-                card.dataset.index = index;
+        const index = this.state.currentQuestionIndex;
+        const q = this.state.currentQuestions[index];
+        const total = this.state.currentQuestions.length;
 
-                // Header: Question Text & Image
-                let html = `<h3>${index+1}. ${q.question}</h3>`;
-                if (q.image) {
-                    html += `<img src="${q.image}" style="max-width:100%; border-radius:4px; margin-bottom:15px;" loading="lazy">`;
-                }
+        // Create Card Wrapper
+        const card = document.createElement('div');
+        card.className = 'q-card single-view-card'; // Add single-view class for styling
+        card.dataset.id = q.id;
+        card.dataset.index = index;
 
-                // Body: Options or Match
-                html += '<div class="q-body">';
-                
-                if (q.type === 'match' || (q.match_pairs && Array.isArray(q.match_pairs) && q.match_pairs.length > 0)) {
-                    // RENDER MATCH
-                    html += this.renderMatchQuestion(q, index);
-                } else {
-                    // RENDER STANDARD
-                    html += this.renderStandardOptions(q, index);
-                }
-                
-                html += '</div>';
+        // PROGRESS HEADER
+        const progress = document.createElement('div');
+        progress.className = 'quiz-progress-header';
+        progress.innerHTML = `Question ${index + 1} / ${total}`;
+        card.appendChild(progress);
 
-                // Footer: Explanation (Hidden)
-                if (q.explanation) {
-                    html += `<div class="explanation-box" id="expl-${index}">${q.explanation}</div>`;
-                }
-
-                // Always show check button everywhere
-                html += `
-                    <div class="card-footer" style="margin-top:15px; text-align:right;">
-                         <button type="button" class="btn-check" onclick="App.checkSingleQuestion(${index}, this)">Vérifier la réponse</button>
-                    </div>
-                `;
-
-                card.innerHTML = html;
-                container.appendChild(card);
-            } catch(e) {
-                console.warn(`Skipping malformed question #${q.id}:`, e);
-                const errDiv = document.createElement('div');
-                errDiv.style.color = 'red';
-                errDiv.style.padding = '10px';
-                errDiv.innerText = `Erreur d'affichage question #${index+1} (ID: ${q.id})`;
-                container.appendChild(errDiv);
-            }
-        });
-
-        // Re-init Drag & Drop listeners
-        setTimeout(() => this.initDragDrop(), 100);
-    },
-
-    renderMatchQuestion: function(q, qIndex) {
-        let leftRows = '';
-        let rightItems = '';
-        
-        // Prepare Right Items (Shuffle)
-        const terms = q.match_pairs.map((p, i) => ({ term: p.term, id: i }));
-        terms.sort(() => Math.random() - 0.5);
-
-        q.match_pairs.forEach((pair, idx) => {
-            leftRows += `
-                <div class="match-row" data-correct-term="${pair.term}">
-                    <span>${pair.definition}</span>
-                    <div class="target-zone" data-zone-id="${q.id}-${idx}"></div>
-                </div>
-            `;
-        });
-
-        terms.forEach((item, idx) => {
-             rightItems += `
-                <div class="draggable-item" draggable="true" id="drag-${q.id}-${item.id}" data-term="${item.term}">
-                    ${item.term}
-                </div>
-             `;
-        });
-
-        return `
-            <div class="match-area">
-                <div class="match-rows">${leftRows}</div>
-                <div class="draggable-bank" id="bank-${q.id}">${rightItems}</div>
-            </div>
-        `;
-    },
-
-    renderStandardOptions: function(q, qIndex) {
-        let html = '<div class="options-list">';
-        const isMulti = q.correct && q.correct.length > 1;
-        const type = isMulti ? 'checkbox' : 'radio';
-
-        if (!q.options || q.options.length === 0) {
-            return '<p><i>Aucune option disponible.</i></p>';
+        // QUESTION TEXT
+        let contentHtml = `<h3 class="q-text">${q.question}</h3>`;
+        if (q.image) {
+            contentHtml += `<div class="q-image-container"><img src="${q.image}" alt="Question Image"></div>`;
         }
 
-        q.options.forEach((opt, idx) => {
-            html += `
-                <label class="opt-item">
-                    <input type="${type}" name="q-${qIndex}" value="${idx}">
-                    ${opt}
-                </label>
-            `;
-        });
-        html += '</div>';
-        return html;
+        // OPTIONS BODY
+        contentHtml += '<div class="q-body">';
+        if (q.match_pairs && q.match_pairs.length > 0) {
+            contentHtml += this.renderMatchQuestion(q, index);
+        } else {
+            contentHtml += this.renderStandardOptions(q, index);
+        }
+        contentHtml += '</div>';
+
+        // EXPLANATION (Hidden by default)
+        // Check if already validated to show explanation
+        const isValidated = this.state.validatedQuestions && this.state.validatedQuestions.has(index);
+        const explClass = isValidated ? 'explanation-box visible' : 'explanation-box hidden';
+        
+        if (q.explanation) {
+            contentHtml += `<div class="${explClass}" id="expl-${index}">${q.explanation}</div>`;
+        }
+
+        card.innerHTML += contentHtml;
+
+        // ACTION BUTTONS FOOTER
+        const footer = document.createElement('div');
+        footer.className = 'card-footer-nav';
+
+        // PREV BUTTON
+        const prevBtn = document.createElement('button');
+        prevBtn.className = 'btn-nav prev-btn';
+        prevBtn.textContent = '← Précédent';
+        prevBtn.disabled = (index === 0);
+        prevBtn.onclick = () => this.prevQuestion();
+        footer.appendChild(prevBtn);
+
+        // VALIDATE BUTTON
+        const verifyBtn = document.createElement('button');
+        verifyBtn.className = 'btn-verify';
+        verifyBtn.textContent = isValidated ? 'Réponse Validée' : 'Vérifier';
+        verifyBtn.disabled = isValidated; // Disable if already checked
+        verifyBtn.onclick = () => this.checkSingleQuestion(index, verifyBtn);
+        // If match question, user might need to re-drag, so maybe don't disable if not perfect? 
+        // For now disable once checked to prevent spamming.
+        footer.appendChild(verifyBtn);
+
+        // NEXT BUTTON
+        const nextBtn = document.createElement('button');
+        nextBtn.className = 'btn-nav next-btn';
+        if (index === total - 1) {
+            nextBtn.textContent = 'Terminer';
+            nextBtn.onclick = () => this.finishQuiz(); // Show results
+        } else {
+            nextBtn.textContent = 'Suivant →';
+            nextBtn.onclick = () => this.nextQuestion();
+        }
+        footer.appendChild(nextBtn);
+
+        card.appendChild(footer);
+        container.appendChild(card);
+
+        // Re-init Drag & Drop if needed
+        if (q.match_pairs && q.match_pairs.length > 0) {
+            setTimeout(() => this.initDragDrop(), 100);
+        }
+        
+        // If valid, apply styles immediately
+        if (isValidated) {
+            this.reapplyValidationStyles(index);
+        }
     },
 
-    checkSingleQuestion: function(index, btnDesc) {
-        // Prevent double checking
-        if (btnDesc.disabled) return;
+    nextQuestion: function() {
+        if (this.state.currentQuestionIndex < this.state.currentQuestions.length - 1) {
+            this.state.currentQuestionIndex++;
+            this.renderQuizForm();
+        } else {
+            // Finish
+            this.finishQuiz();
+        }
+    },
+
+    prevQuestion: function() {
+        if (this.state.currentQuestionIndex > 0) {
+            this.state.currentQuestionIndex--;
+            this.renderQuizForm();
+        }
+    },
+
+    reapplyValidationStyles: function(index) {
+        // Helper to re-color the options if coming back to a validated question
+        // Reuse checkSingleQuestion logic or split it. 
+        // For simplicity, we can just call checkSingleQuestion with a dummy button or flag.
+        // But checkSingleQuestion does scoring side effects? 
+        // Only visual side effects are needed.
+        // I will just let the user see the explanation mainly. 
+        // But to see green/red, I need to re-run the highlighting logic.
+        // I'll add a 'visualOnly' flag to checkSingleQuestion.
+        const btn = document.querySelector('.btn-verify');
+        if(btn) this.checkSingleQuestion(index, btn, true); 
+    },
+
+    checkSingleQuestion: function(index, btnDesc, visualOnly = false) {
+        // Prevent double checking unless visual reload
+        // if (btnDesc.disabled && !visualOnly) return;
         
         const card = document.querySelector(`.q-card[data-index="${index}"]`);
         if (!card) return;
@@ -395,6 +400,12 @@ const App = {
         // Clean previous styles
         card.querySelectorAll('.opt-item').forEach(el => el.classList.remove('correct-highlight', 'wrong-highlight', 'missed-highlight'));
         
+        // Mark as validated in state
+        if (!visualOnly) {
+            if (!this.state.validatedQuestions) this.state.validatedQuestions = new Set();
+            this.state.validatedQuestions.add(index);
+        }
+
         if (q.type === 'match' || (q.match_pairs && Array.isArray(q.match_pairs) && q.match_pairs.length > 0)) {
             // Validate Match
             const rows = card.querySelectorAll('.match-row');
@@ -438,24 +449,51 @@ const App = {
             // Visual Feedback
             inputs.forEach(inp => {
                 const val = parseInt(inp.value);
-                const parent = inp.closest('.opt-item');
+                const parent = inp.closest('.opt-item'); // Assuming label is the parent
+                
+                // Reset content
+                // parent.innerHTML = ... ? No, keep input.
                 
                 if (correctSet.has(val)) {
                     parent.classList.add('correct-highlight'); 
+                    // Add badge if not exists
+                    if (!parent.querySelector('.badge-correct')) {
+                         const badge = document.createElement('span');
+                         badge.className = 'badge-correct';
+                         badge.textContent = ' Correct';
+                         parent.appendChild(badge);
+                    }
+
                     if (!userSet.has(val)) parent.classList.add('missed-highlight');
                 } else if (userSet.has(val)) {
                     parent.classList.add('wrong-highlight');
+                     if (!parent.querySelector('.badge-wrong')) {
+                         const badge = document.createElement('span');
+                         badge.className = 'badge-wrong';
+                         badge.textContent = ' Incorrect';
+                         parent.appendChild(badge);
+                    }
                 }
             });
         }
 
+        this.state.results[index] = isCorrect;
+
         // Show explanation
         const expl = card.querySelector('.explanation-box');
-        if (expl) expl.classList.add('visible');
+        if (expl) {
+            expl.classList.remove('hidden');
+            expl.classList.add('visible');
+        }
 
         // Update button state
-        btnDesc.disabled = true;
-        btnDesc.textContent = isCorrect ? "Correct !" : "Incorrect";
+        if (btnDesc) {
+            btnDesc.disabled = true;
+            btnDesc.textContent = isCorrect ? "Correct !" : "Incorrect";
+            btnDesc.style.backgroundColor = isCorrect ? "#4CAF50" : "#F44336";
+            btnDesc.style.color = "white";
+        }
+    },
         btnDesc.classList.remove('btn-check'); // Remove default style
         btnDesc.style.background = isCorrect ? '#107c10' : '#d13438';
         btnDesc.style.color = 'white';
@@ -541,6 +579,18 @@ const App = {
         setTimeout(() => {
              this.showResults(score, this.state.currentQuestions.length);
         }, 500);
+    },
+
+    finishQuiz: function() {
+        let score = 0;
+        const total = this.state.currentQuestions.length;
+        for (let i = 0; i < total; i++) {
+            if (this.state.results[i]) {
+                score++;
+            }
+        }
+        this.showResults(score, total);
+        window.scrollTo(0,0);
     },
 
     showResults: function(score, total) {
