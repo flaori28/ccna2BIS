@@ -53,7 +53,18 @@ const App = {
         }
     },
 
-    save
+    saveHistory: function(result) {
+        this.state.userHistory.push(result);
+        localStorage.setItem('ccna2_history', JSON.stringify(this.state.userHistory));
+        this.renderstats();
+    },
+
+    renderstats: function() {
+        const history = this.state.userHistory;
+        const totalAttempts = history.length;
+        let totalScore = 0;
+        let maxScore = 0;
+        
         history.forEach(h => {
              totalScore += h.score;
              maxScore += h.total;
