@@ -294,7 +294,8 @@ body {
 
 .target-zone {
     width: 150px;
-    height: 40px;
+    min-height: 40px;
+    height: auto;
     border: 2px dashed #ccc;
     border-radius: 4px;
     background: white;
@@ -302,6 +303,7 @@ body {
     align-items: center;
     justify-content: center;
     margin-left: 10px;
+    padding: 5px;
 }
 
 .target-zone.filled {
@@ -329,6 +331,8 @@ body {
     text-align: center;
     font-size: 0.9rem;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    user-select: none;
+    touch-action: manipulation; /* Improves touch on mobile */
 }
 
 .draggable-item:active {
@@ -363,4 +367,9 @@ body {
     background-color: #fff3cd !important;
     border-color: #ffeeba !important;
 }
-.selected-item { border: 2px solid #0056b3; background-color: #e2e6ea; }
+.selected-item { 
+    border: 2px solid #0078d4 !important; 
+    background-color: #cceeff !important; 
+    box-shadow: 0 0 8px rgba(0, 120, 212, 0.4);
+    transform: scale(1.02);
+}

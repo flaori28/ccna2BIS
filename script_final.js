@@ -178,25 +178,16 @@ const App = {
     },
 
     startSeries: function(id) {
-        this.state.currentSeries = id;
         const chunkSize = 60;
+        this.state.currentSeries = id;
         const startIdx = (id - 1) * chunkSize;
         this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + chunkSize);
         
         this.switchView('quiz');
         document.getElementById('quiz-title').textContent = `Série Mélangée ${id}`;
-        document.getElementById('quiz-progress-text').textContent = `${this.state.currentQuestions.length}
-        }
-    },
-
-    startSeries: function(id) {
-        this.state.currentSeries = id;
-        const startIdx = (id - 1) * 10;
-        this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + 10);
         
-        this.switchView('quiz');
-        document.getElementById('quiz-title').textContent = `Série ${id}`;
-        document.getElementById('quiz-progress-text').textContent = `10 Questions`;
+        const prog = document.getElementById('quiz-progress-text');
+        if(prog) prog.textContent = `${this.state.currentQuestions.length} Questions`;
         
         this.renderQuizForm();
         window.scrollTo(0,0);
