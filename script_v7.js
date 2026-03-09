@@ -764,12 +764,25 @@ function retryCurrentQuiz() {
 function resetAllData() {
     if(confirm("Voulez-vous vraiment effacer tout votre historique ?")) {
         localStorage.removeItem('ccna2_history');
-        // Soft reset instead of reload to prevent loading issues
-        if (typeof App !== 'undefined') {
-            App.state.userHistory = [];
-            App.renderstats();
-            alert("Historique effacé avec succès.");
-        } else {
+        // Force complete reload to avoid stale state, but with cache busting on reload if possible or just standard reload
+        // The user reported issues with "deleting questions", suggesting the previous reload failed or the soft reset was weird.
+        // Let's try a robust soft reset first, then reload if needed.
+        
+        try {
+            if (typeof App !== 'undefined') {
+                App.state.userHistory = [];
+                App.renderstats();
+                // Also reset any active quiz state just in case
+                App.state.currentQuestionIndex = 0;
+                App.state.currentQuestions = [];
+                App.state.validatedQuestions = new Set();
+                App.switchView('dashboard');
+                alert("Historique effacé avec succès.");
+            } else {
+                location.reload();
+            }
+        } catch(e) {
+            console.error("Reset Error:", e);
             location.reload();
         }
     }
