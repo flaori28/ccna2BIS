@@ -158,25 +158,24 @@ const App = {
     // --- HELPERS FOR NEW MENU ---
     startExamenMode: function() {
         this.state.questions = this.shuffleArray([...allQuestions]);
-        this.startSeries(1, 60, "Mode Examen");
+        this.startSeries(1, 60, "Mode Examen", 'exam');
     },
     
     startIntegralMode: function() {
         this.state.questions = this.shuffleArray([...allQuestions]);
         const total = this.state.questions.length;
-        this.startSeries(1, total, "Mode Intégral");
+        this.startSeries(1, total, "Mode Intégral", 'training');
     },
 
     startTrainingMode: function() {
         this.state.questions = this.shuffleArray([...allQuestions]);
-        this.startSeries(1, 60, "Mode Entraînement");
+        this.startSeries(1, 60, "Mode Entraînement", 'training');
     },
 
     renderSeriesList: function() {
         const grid = document.getElementById('series-list');
         if (!grid) return;
         grid.innerHTML = '';
-
         const totalQ = this.state.questions.length;
         
         // --- CUSTOM MENU BASED ON USER IMAGE ---
@@ -219,13 +218,11 @@ const App = {
             <div class="mini-series-grid" id="mini-grid"></div>
         `;
 
-        // Bind Events manually to avoid inline JS scope issues with "App"
+        // Bind Events
         document.getElementById('btn-train-mode').onclick = () => this.startTrainingMode();
         document.getElementById('btn-exam-mode').onclick = () => this.startExamenMode();
         document.getElementById('btn-integral-mode').onclick = () => this.startIntegralMode();
 
-
-        // Render Mini Series Grid
         const miniGrid = document.getElementById('mini-grid');
         const chunkSize = 10;
         const totalSeries = Math.ceil(totalQ / chunkSize);
@@ -234,18 +231,18 @@ const App = {
             const btn = document.createElement('button');
             btn.className = 'btn-mini';
             btn.textContent = `Série ${i}`;
-            btn.onclick = () => this.startSeries(i, 10, `Série ${i}`);
+            btn.onclick = () => this.startSeries(i, 10, `Série ${i}`, 'training'); // Default series are training
             miniGrid.appendChild(btn);
         }
     },
     
-    startSeries: function(id, size = 60, title = 'Quiz') {
+    startSeries: function(id, size = 60, title = 'Quiz', mode = 'exam') {
         this.state.currentSeries = id;
         this.state.currentChunkSize = size;
         this.state.currentTitle = title;
+        this.state.currentMode = mode;
         
         const startIdx = (id - 1) * size;
-        // Safety bound
         const endIdx = Math.min(startIdx + size, this.state.questions.length);
         
         this.state.currentQuestions = this.state.questions.slice(startIdx, endIdx);
@@ -255,6 +252,13 @@ const App = {
         
         const prog = document.getElementById('quiz-progress-text');
         if(prog) prog.textContent = `${this.state.currentQuestions.length} Questions`;
+        
+        // Hide global validate btn if training? No, keep it to finish.
+        // But maybe rename it?
+        const valBtn = document.getElementById('btn-validate');
+        if(valBtn) {
+            valBtn.textContent = (mode === 'training') ? "Terminer et voir le score" : "Valider les réponses";
+        }
         
         this.renderQuizForm();
         window.scrollTo(0,0);
@@ -299,6 +303,15 @@ const App = {
                 // Footer: Explanation (Hidden)
                 if (q.explanation) {
                     html += `<div class="explanation-box" id="expl-${index}">${q.explanation}</div>`;
+                }
+
+                // Training Mode: Check Button
+                if (this.state.currentMode === 'training') {
+                    html += `
+                        <div class="card-footer" style="margin-top:15px; text-align:right;">
+                             <button type="button" class="btn-check" onclick="App.checkSingleQuestion(${index}, this)">Vérifier la réponse</button>
+                        </div>
+                    `;
                 }
 
                 card.innerHTML = html;
@@ -369,6 +382,87 @@ const App = {
         });
         html += '</div>';
         return html;
+    },
+
+    checkSingleQuestion: function(index, btnDesc) {
+        // Prevent double checking
+        if (btnDesc.disabled) return;
+        
+        const card = document.querySelector(`.q-card[data-index="${index}"]`);
+        if (!card) return;
+        
+        const q = this.state.currentQuestions[index];
+        let isCorrect = false;
+
+        // Clean previous styles
+        card.querySelectorAll('.opt-item').forEach(el => el.classList.remove('correct-highlight', 'wrong-highlight', 'missed-highlight'));
+        
+        if (q.type === 'match' || (q.match_pairs && Array.isArray(q.match_pairs) && q.match_pairs.length > 0)) {
+            // Validate Match
+            const rows = card.querySelectorAll('.match-row');
+            let rowCorrectCount = 0;
+            rows.forEach(row => {
+                const target = row.dataset.correctTerm;
+                const zone = row.querySelector('.target-zone');
+                const item = zone.querySelector('.draggable-item');
+                
+                if (item) {
+                    if (item.dataset.term === target) {
+                        zone.style.borderColor = 'green';
+                        zone.style.background = '#d4edda';
+                        rowCorrectCount++;
+                    } else {
+                        zone.style.borderColor = 'red';
+                        zone.style.background = '#f8d7da';
+                    }
+                } else {
+                    zone.style.borderColor = 'orange'; // Missed
+                }
+            });
+            if (rowCorrectCount === rows.length) isCorrect = true;
+
+        } else {
+            // Validate Standard
+            const inputs = card.querySelectorAll(`input[name="q-${index}"]`);
+            let userSelected = [];
+            inputs.forEach(inp => { if (inp.checked) userSelected.push(parseInt(inp.value)); });
+            
+            const correctIndices = q.correct || [];
+            
+            // Check Logic
+            const correctSet = new Set(correctIndices);
+            const userSet = new Set(userSelected);
+            
+            if (userSelected.length === correctIndices.length && userSelected.every(v => correctSet.has(v))) {
+                isCorrect = true;
+            }
+
+            // Visual Feedback
+            inputs.forEach(inp => {
+                const val = parseInt(inp.value);
+                const parent = inp.closest('.opt-item');
+                
+                if (correctSet.has(val)) {
+                    parent.classList.add('correct-highlight'); 
+                    if (!userSet.has(val)) parent.classList.add('missed-highlight');
+                } else if (userSet.has(val)) {
+                    parent.classList.add('wrong-highlight');
+                }
+            });
+        }
+
+        // Show explanation
+        const expl = card.querySelector('.explanation-box');
+        if (expl) expl.classList.add('visible');
+
+        // Update button state
+        btnDesc.disabled = true;
+        btnDesc.textContent = isCorrect ? "Correct !" : "Incorrect";
+        btnDesc.classList.remove('btn-check'); // Remove default style
+        btnDesc.style.background = isCorrect ? '#107c10' : '#d13438';
+        btnDesc.style.color = 'white';
+        btnDesc.style.border = 'none';
+        btnDesc.style.cursor = 'default';
     },
 
     validate: function() {

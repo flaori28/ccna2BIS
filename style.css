@@ -192,6 +192,21 @@ body {
     background-color: #006bc7; 
 }
 
+.btn-check {
+    background: #0078d4;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-check:hover {
+    background: #005a9e;
+}
+
 /* Hide old styles */
 .tab-container, .btn-series {
     /* Kept only if needed for fallback */
