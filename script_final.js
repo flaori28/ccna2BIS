@@ -7,6 +7,8 @@ const App = {
     state: {
         questions: [],
         currentSeries: null,
+        currentChunkSize: 60, // Default to exam mode
+        currentTitle: '',
         currentQuestions: [],
         userHistory: [],
         view: 'dashboard',
@@ -159,35 +161,66 @@ const App = {
         grid.innerHTML = '';
 
         const totalQ = this.state.questions.length;
-        // CHANGED CHUNK SIZE TO 60
-        const chunkSize = 60;
-        const totalSeries = Math.ceil(totalQ / chunkSize);
+        
+        // --- 1. Mode Examen (60 questions) ---
+        const headingExams = document.createElement('h3');
+        headingExams.textContent = "🎓 Mode Examen (Séries de 60)";
+        headingExams.style.width = '100%';
+        headingExams.style.marginTop = '20px';
+        headingExams.style.marginBottom = '10px';
+        headingExams.style.borderBottom = '1px solid #ddd';
+        grid.appendChild(headingExams);
+        
+        const chunkExam = 60;
+        const totalExams = Math.ceil(totalQ / chunkExam);
 
-        for (let i = 1; i <= totalSeries; i++) {
+        for (let i = 1; i <= totalExams; i++) {
             const btn = document.createElement('div');
             btn.className = 'btn-series';
-            
-            // Stats per series ID are less relevant in random mode, 
-            // but we can still show the last score for "Session #1" if we wanted, 
-            // but simpler to just show "Examen Blanc #i"
-            
+            btn.style.borderLeft = '4px solid #0078d4'; // Blue accent for exams
             btn.innerHTML = `
-                <h4><i class="fas fa-random"></i> Série Mélangée ${i}</h4>
-                <span>Questions ${(i-1)*chunkSize + 1} - ${Math.min(i*chunkSize, totalQ)}</span>
+                <h4><i class="fas fa-file-alt"></i> Examen Blanc ${i}</h4>
+                <span>Questions ${(i-1)*chunkExam + 1} - ${Math.min(i*chunkExam, totalQ)}</span>
             `;
-            btn.onclick = () => this.startSeries(i);
+            btn.onclick = () => this.startSeries(i, 60, `Examen Blanc ${i}`);
+            grid.appendChild(btn);
+        }
+
+        // --- 2. Mode Entraînement (10 questions) ---
+        const headingTrain = document.createElement('h3');
+        headingTrain.textContent = "⚡ Entraînement Rapide (Séries de 10)";
+        headingTrain.style.width = '100%';
+        headingTrain.style.marginTop = '40px';
+        headingTrain.style.marginBottom = '10px';
+        headingTrain.style.borderBottom = '1px solid #ddd';
+        grid.appendChild(headingTrain);
+
+        const chunkTrain = 10;
+        const totalTrain = Math.ceil(totalQ / chunkTrain);
+
+        for (let i = 1; i <= totalTrain; i++) {
+            const btn = document.createElement('div');
+            btn.className = 'btn-series';
+             btn.style.borderLeft = '4px solid #107c10'; // Green accent for training
+            btn.innerHTML = `
+                <h4><i class="fas fa-bolt"></i> Série Rapide ${i}</h4>
+                <span>Questions ${(i-1)*chunkTrain + 1} - ${Math.min(i*chunkTrain, totalQ)}</span>
+            `;
+            btn.onclick = () => this.startSeries(i, 10, `Série Rapide ${i}`);
             grid.appendChild(btn);
         }
     },
 
-    startSeries: function(id) {
-        const chunkSize = 60;
+    startSeries: function(id, size = 60, title = 'Quiz') {
         this.state.currentSeries = id;
-        const startIdx = (id - 1) * chunkSize;
-        this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + chunkSize);
+        this.state.currentChunkSize = size;
+        this.state.currentTitle = title;
+        
+        const startIdx = (id - 1) * size;
+        this.state.currentQuestions = this.state.questions.slice(startIdx, startIdx + size);
         
         this.switchView('quiz');
-        document.getElementById('quiz-title').textContent = `Série Mélangée ${id}`;
+        document.getElementById('quiz-title').textContent = title;
         
         const prog = document.getElementById('quiz-progress-text');
         if(prog) prog.textContent = `${this.state.currentQuestions.length} Questions`;
@@ -552,7 +585,7 @@ function showDashboard() {
 }
 
 function retryCurrentQuiz() {
-    App.startSeries(App.state.currentSeries);
+    App.startSeries(App.state.currentSeries, App.state.currentChunkSize, App.state.currentTitle);
 }
 
 function resetAllData() {
