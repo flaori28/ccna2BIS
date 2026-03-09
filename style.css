@@ -103,22 +103,56 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
+    /* Ensure only items inside take space, not the container itself affecting parent flow unexpectedly */
+}
+
+/* Custom Tab Style */
+.tab-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+    border-bottom: 2px solid #e1dfdd;
+    padding-bottom: 10px;
+}
+
+.btn-tab {
+    padding: 10px 20px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    border-bottom: 3px solid transparent;
+    color: #605e5c;
+    transition: all 0.2s;
+}
+
+.btn-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+.btn-tab:hover {
+    color: var(--text);
+    background: #f3f2f1;
+    border-radius: 4px 4px 0 0;
 }
 
 .btn-series {
     background: var(--white);
-    border: 2px solid transparent;
+    border: 1px solid #e1dfdd; /* Subtle border */
     border-radius: 8px;
     padding: 20px;
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1.6px 3.6px rgba(0,0,0,0.13), 0 0.3px 0.9px rgba(0,0,0,0.11); /* Depth 4 shadow */
 }
 
 .btn-series:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
+    transform: translateY(-4px);
+    box-shadow: 0 6.4px 14.4px rgba(0,0,0,0.13), 0 1.2px 3.6px rgba(0,0,0,0.11); /* Depth 8 shadow on hover */
     border-color: var(--primary);
 }
 

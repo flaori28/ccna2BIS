@@ -161,23 +161,18 @@ const App = {
         grid.innerHTML = '';
 
         const totalQ = this.state.questions.length;
-        
-        // --- SELECTION TABS ---
+
+        // --- CUSTOM TAB CONTAINER ---
         const tabsContainer = document.createElement('div');
-        tabsContainer.style.width = '100%';
-        tabsContainer.style.marginBottom = '20px';
-        tabsContainer.style.display = 'flex';
-        tabsContainer.style.gap = '10px';
+        tabsContainer.className = 'tab-container';
         
         const btnExamTab = document.createElement('button');
         btnExamTab.textContent = "Mode Examen (60)";
-        btnExamTab.className = 'btn-primary';
-        btnExamTab.style.flex = '1';
+        btnExamTab.className = 'btn-tab';
         
         const btnTrainTab = document.createElement('button');
         btnTrainTab.textContent = "Mode Série (10)";
-        btnTrainTab.className = 'btn-secondary'; // Default inactive
-        btnTrainTab.style.flex = '1';
+        btnTrainTab.className = 'btn-tab active';
 
         tabsContainer.appendChild(btnExamTab);
         tabsContainer.appendChild(btnTrainTab);
@@ -191,24 +186,29 @@ const App = {
 
         const renderExamMode = () => {
             contentContainer.innerHTML = '';
-            btnExamTab.className = 'btn-primary';
-            btnTrainTab.className = 'btn-secondary';
+            
+            // Tab Styles
+            btnExamTab.classList.add('active');
+            btnExamTab.classList.remove('btn-tab-inactive');
+            btnTrainTab.classList.remove('active');
             
             const chunkExam = 60;
             const totalExams = Math.ceil(totalQ / chunkExam);
 
             if(totalExams === 0) {
-                 contentContainer.innerHTML = '<p>Aucune question disponible.</p>';
+                 contentContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune question disponible.</p>';
                  return;
             }
 
             for (let i = 1; i <= totalExams; i++) {
                 const btn = document.createElement('div');
                 btn.className = 'btn-series';
-                btn.style.borderLeft = '4px solid #0078d4';
+                // Distinctive styling for Exams
+                btn.style.borderLeft = '6px solid #0078d4';
                 btn.innerHTML = `
-                    <h4><i class="fas fa-file-alt"></i> Examen Blanc ${i}</h4>
-                    <span>Questions ${(i-1)*chunkExam + 1} - ${Math.min(i*chunkExam, totalQ)}</span>
+                    <h4 style="color:#0078d4"><i class="fas fa-file-contract"></i> Examen ${i}</h4>
+                    <span style="display:block; margin-top:5px; font-weight:500;">60 Questions</span>
+                    <span style="font-size:0.8rem; color:#888;">Index: ${(i-1)*chunkExam + 1}-${Math.min(i*chunkExam, totalQ)}</span>
                 `;
                 btn.onclick = () => this.startSeries(i, 60, `Examen Blanc ${i}`);
                 contentContainer.appendChild(btn);
@@ -217,24 +217,28 @@ const App = {
 
         const renderTrainMode = () => {
             contentContainer.innerHTML = '';
-            btnExamTab.className = 'btn-secondary';
-            btnTrainTab.className = 'btn-primary';
+
+            // Tab Styles
+            btnTrainTab.classList.add('active');
+            btnExamTab.classList.remove('active');
 
             const chunkTrain = 10;
             const totalTrain = Math.ceil(totalQ / chunkTrain);
 
             if(totalTrain === 0) {
-                 contentContainer.innerHTML = '<p>Aucune question disponible.</p>';
+                 contentContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Aucune question disponible.</p>';
                  return;
             }
 
             for (let i = 1; i <= totalTrain; i++) {
                 const btn = document.createElement('div');
                 btn.className = 'btn-series';
-                btn.style.borderLeft = '4px solid #107c10';
+                // Distinctive styling for Training
+                btn.style.borderLeft = '6px solid #107c10'; 
                 btn.innerHTML = `
-                    <h4><i class="fas fa-bolt"></i> Série ${i}</h4>
-                    <span>Questions ${(i-1)*chunkTrain + 1} - ${Math.min(i*chunkTrain, totalQ)}</span>
+                    <h4 style="color:#107c10"><i class="fas fa-bolt"></i> Série ${i}</h4>
+                    <span style="display:block; margin-top:5px; font-weight:500;">10 Questions</span>
+                    <span style="font-size:0.8rem; color:#888;">Index: ${(i-1)*chunkTrain + 1}-${Math.min(i*chunkTrain, totalQ)}</span>
                 `;
                 btn.onclick = () => this.startSeries(i, 10, `Série ${i}`);
                 contentContainer.appendChild(btn);
@@ -246,7 +250,7 @@ const App = {
         btnTrainTab.onclick = renderTrainMode;
 
         // Default view
-        renderTrainMode(); // Prioritize 10s based on user request "rajoute les question mais en series de 10"
+        renderTrainMode(); 
     },
 
     startSeries: function(id, size = 60, title = 'Quiz') {
