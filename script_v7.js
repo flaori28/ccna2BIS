@@ -764,7 +764,14 @@ function retryCurrentQuiz() {
 function resetAllData() {
     if(confirm("Voulez-vous vraiment effacer tout votre historique ?")) {
         localStorage.removeItem('ccna2_history');
-        location.reload();
+        // Soft reset instead of reload to prevent loading issues
+        if (typeof App !== 'undefined') {
+            App.state.userHistory = [];
+            App.renderstats();
+            alert("Historique effacé avec succès.");
+        } else {
+            location.reload();
+        }
     }
 }
 
