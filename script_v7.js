@@ -829,8 +829,8 @@ function resetAllData() {
                 App.renderstats();
                 // Also reset any active quiz state just in case
                 App.state.currentQuestionIndex = 0;
-                App.state.currentQuestions = [];
                 App.state.validatedQuestions = new Set();
+                // Ne pas vider currentQuestions ici !
                 App.switchView('dashboard');
                 alert("Historique effacé avec succès.");
             } else {
