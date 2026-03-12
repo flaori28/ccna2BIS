@@ -387,6 +387,61 @@ const App = {
         if(btn) this.checkSingleQuestion(index, btn, true); 
     },
 
+    renderMatchQuestion: function(q, qIndex) {
+        let leftRows = '';
+        let rightItems = '';
+        
+        // Prepare Right Items (Shuffle)
+        const terms = q.match_pairs.map((p, i) => ({ term: p.term, id: i }));
+        terms.sort(() => Math.random() - 0.5);
+
+        q.match_pairs.forEach((pair, idx) => {
+            leftRows += `
+                <div class="match-row" data-correct-term="${pair.term}">
+                    <span>${pair.definition}</span>
+                    <div class="target-zone" data-zone-id="${q.id}-${idx}"></div>
+                </div>
+            `;
+        });
+
+        terms.forEach((item, idx) => {
+             rightItems += `
+                <div class="draggable-item" draggable="true" id="drag-${q.id}-${item.id}" data-term="${item.term}">
+                    ${item.term}
+                </div>
+             `;
+        });
+
+        return `
+            <div class="match-area">
+                <div class="match-rows">${leftRows}</div>
+                <div class="draggable-bank" id="bank-${q.id}">${rightItems}</div>
+            </div>
+        `;
+    },
+
+    renderStandardOptions: function(q, qIndex) {
+        let html = '<div class="options-list">';
+        // Fix for multiple correct answers detection
+        const isMulti = (q.correct && q.correct.length > 1) || (q.correct_answers && q.correct_answers.length > 1);
+        const type = isMulti ? 'checkbox' : 'radio';
+
+        if (!q.options || q.options.length === 0) {
+            return '<p><i>Aucune option disponible.</i></p>';
+        }
+
+        q.options.forEach((opt, idx) => {
+            html += `
+                <label class="opt-item">
+                    <input type="${type}" name="q-${qIndex}" value="${idx}">
+                    ${opt}
+                </label>
+            `;
+        });
+        html += '</div>';
+        return html;
+    },
+
     checkSingleQuestion: function(index, btnDesc, visualOnly = false) {
         // Prevent double checking unless visual reload
         // if (btnDesc.disabled && !visualOnly) return;
